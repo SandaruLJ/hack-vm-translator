@@ -22,11 +22,17 @@ class Parser:
     Methods:
         advance() -> bool
         command_type() -> str
+        arg1() -> str
+        arg2() -> int
     """
-    
+
     def __init__(self, filename):
         self.file = open(filename, 'r')
         self.current_command = ''
+
+
+    def __del__(self):
+        self.file.close()
 
 
     def advance(self):
@@ -80,3 +86,36 @@ class Parser:
             return C_PUSH
         elif self.current_command.startswith('pop'):
             return C_POP
+
+
+    def arg1(self):
+        """Return the first argument of the current command.
+        In the case of C_ARITHMETIC, return the command itself
+        """
+        if self.command_type() == C_ARITHMETIC:
+            return self.current_command
+        return self._get_cmd_field(2)
+
+
+    def arg2(self):
+        """Return the second argument of the current command"""
+        return self._get_cmd_field(3)
+
+
+    def _get_cmd_field(self, field_num):
+        field_str = ''
+
+        current_field = 0
+        inside_field = False
+
+        for char in self.current_command:
+            if not inside_field and char != ' ':
+                current_field += 1
+                inside_field = True
+            elif inside_field and char == ' ':
+                inside_field = False
+
+            if inside_field and current_field == field_num:
+                field_str += char
+
+        return field_str
