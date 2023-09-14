@@ -16,6 +16,7 @@ class CodeWriter:
 	
 	Methods:
 		write_arithmetic(str) -> None
+		write_push_pop(str, str, int) -> None
 	"""
 
 	def __init__(self, filename):
@@ -27,6 +28,9 @@ class CodeWriter:
 
 
 	def write_arithmetic(self, command):
+		"""Write to the output file,
+		the assembly code that implements the given arithmetic-logic command.
+		"""
 		if command == 'add':
 			self._write_comment(command)
 			instructions = [
@@ -38,7 +42,31 @@ class CodeWriter:
 				'D=D+M',
 				'M=D'
 			]
-			self.file.write('\n'.join(instructions))
+			self._write_instructions(instructions)
+
+
+	def write_push_pop(self, command, segment, index):
+		"""Write to the output file,
+		the assembly code that implements the given push or pop command.
+		"""
+		if command == C_PUSH:
+			self._write_comment(f'push {segment} {index}')
+			
+			if segment == 'constant':
+				instructions = [
+					f'@{index}',
+					'D=A',
+					'@SP',
+					'A=M',
+					'M=D',
+					'@SP',
+					'M=M+1'
+				]
+				self._write_instructions(instructions)
+
+
+	def _write_instructions(self, instructions):
+		self.file.write('\n'.join(instructions) + '\n')
 
 
 	def close(self):

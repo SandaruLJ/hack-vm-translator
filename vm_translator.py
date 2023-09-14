@@ -28,7 +28,7 @@ def main():
         if cmd_type == C_ARITHMETIC:
             writer.write_arithmetic(parser.current_command)
         elif cmd_type == C_PUSH or cmd_type == C_POP:
-            pass
+            writer.write_push_pop(cmd_type, parser.arg1(), parser.arg2())
 
     writer.close()
 
