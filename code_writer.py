@@ -33,7 +33,7 @@ class CodeWriter:
         the assembly code that implements the given arithmetic-logic command.
         """
         self._write_comment(command)
-        instructions = self._generate_arithmetic_instructions(command)
+        instructions = self._generate_arithmetic_instructions(command, self.unique_num)
         self._write_instructions(instructions)
 
 
@@ -42,6 +42,18 @@ class CodeWriter:
         """Write to the output file,
         the assembly code that implements the given push or pop command.
         """
+        # generate common stack operation snippets
+        seg_to_d, d_to_stack, stack_to_tmp_reg, tmp_reg_to_seg = \
+            self._generate_push_pop_snippets(segment, index)
+
+        # determine memory segment mapping
+        if segment == 'local':
+            mem_seg = 'LCL'
+        elif segment == 'argument':
+            mem_seg = 'ARG'
+        else:  # this, that, and temp
+            mem_seg = segment.upper()
+
         if command == C_PUSH:
             self._write_comment(f'push {segment} {index}')
 
@@ -49,16 +61,37 @@ class CodeWriter:
                 instructions = [
                     f'@{index}',
                     'D=A',
-                    '@SP',
-                    'A=M',
-                    'M=D',
-                    '@SP',
-                    'M=M+1'
+                    '\n'.join(d_to_stack)
+                ]
+                self._write_instructions(instructions)
+
+            elif segment == 'static':
+                pass
+
+            else:
+                instructions = [
+                    '\n'.join(seg_to_d).format(seg=mem_seg),
+                    '\n'.join(d_to_stack)
+                ]
+                self._write_instructions(instructions)
+
+        # pop commands
+        else:
+            self._write_comment(f'pop {segment} {index}')
+
+            if segment == 'static':
+                pass
+
+            else:
+                instructions = [
+                    '\n'.join(stack_to_tmp_reg),
+                    '\n'.join(tmp_reg_to_seg).format(seg=mem_seg)
                 ]
                 self._write_instructions(instructions)
 
 
-    def _generate_arithmetic_instructions(self, command):
+    @staticmethod
+    def _generate_arithmetic_instructions(command, unique_num):
         # common instruction snippets
         single_operand_prep = [
             '@SP',
@@ -114,13 +147,56 @@ class CodeWriter:
             else:
                 # format equality operation snippet
                 instruction.append('\n'.join(equality_operation).format(
-                    op=command.upper(), unique=self.unique_num)
+                    op=command.upper(), unique=unique_num)
                 )
 
             # set final stack value
             instruction.append('M=D')
 
         return instruction
+
+    @staticmethod
+    def _generate_push_pop_snippets(segment, index):
+        # move memory segment register to D
+        seg_to_d = [
+            f'@{index}',
+            'D=A',
+            '@' + ('5' if segment == 'temp' else '{seg}'),
+            'A=D+' + ('A' if segment == 'temp' else 'M'),
+            'D=M'
+        ]
+        # move from D to stack
+        d_to_stack = [
+            '@SP',
+            'M=M+1',
+            'A=M-1',
+            'M=D'
+        ]
+        # move from stack to a temporary memory register
+        stack_to_tmp_reg = [
+            '@SP',
+            'M=M-1',
+            'A=M',
+            'D=M',
+            '@R13',  # store value here temporarily
+            'M=D'
+        ]
+        # move from temporary memory register to memory segment register
+        tmp_reg_to_seg = [
+            f'@{index}',
+            'D=A',
+            '@' + ('5' if segment == 'temp' else '{seg}'),
+            'D=D+' + ('A' if segment == 'temp' else 'M'),
+            '@R14',  # store memory segment pointer here
+            'M=D',
+            '@R13',  # where value from stack was stored in
+            'D=M',
+            '@R14',
+            'A=M',   # load memory segment pointer back to A
+            'M=D'
+        ]
+
+        return seg_to_d, d_to_stack, stack_to_tmp_reg, tmp_reg_to_seg
 
 
     def _write_instructions(self, instructions):
