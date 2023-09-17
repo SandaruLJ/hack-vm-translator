@@ -99,7 +99,7 @@ class Parser:
 
     def arg2(self):
         """Return the second argument of the current command"""
-        return self._get_cmd_field(3)
+        return int(self._get_cmd_field(3))
 
 
     def _get_cmd_field(self, field_num):
