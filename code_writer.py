@@ -37,13 +37,12 @@ class CodeWriter:
         self._write_instructions(instructions)
 
 
-
     def write_push_pop(self, command, segment, index):
         """Write to the output file,
         the assembly code that implements the given push or pop command.
         """
         # generate common stack operation snippets
-        seg_to_d, d_to_stack, stack_to_tmp_reg, tmp_reg_to_seg = \
+        seg_to_d, d_to_stack, stack_to_d, d_to_seg = \
             self._generate_push_pop_snippets(segment, index)
 
         # determine memory segment mapping
@@ -63,31 +62,52 @@ class CodeWriter:
                     'D=A',
                     '\n'.join(d_to_stack)
                 ]
-                self._write_instructions(instructions)
 
+            # special case for static segment
             elif segment == 'static':
-                pass
+                instructions = []
 
+            # special case for pointer segment
+            elif segment == 'pointer':
+                instructions = [
+                    '@THIS' if index == 0 else '@THAT',
+                    'D=M',
+                    '\n'.join(d_to_stack)
+                ]
+
+            # local, argument, this, that, and temp
             else:
                 instructions = [
                     '\n'.join(seg_to_d).format(seg=mem_seg),
                     '\n'.join(d_to_stack)
                 ]
-                self._write_instructions(instructions)
+
+            self._write_instructions(instructions)
 
         # pop commands
         else:
             self._write_comment(f'pop {segment} {index}')
 
+            # special case for static segment
             if segment == 'static':
-                pass
+                instructions = []
 
+            # special case for pointer segment
+            elif segment == 'pointer':
+                instructions = [
+                    '\n'.join(stack_to_d),
+                    '@THIS' if index == 0 else '@THAT',
+                    'M=D'
+                ]
+
+            # local, argument, this, that, and temp
             else:
                 instructions = [
-                    '\n'.join(stack_to_tmp_reg),
-                    '\n'.join(tmp_reg_to_seg).format(seg=mem_seg)
+                    '\n'.join(stack_to_d),
+                    '\n'.join(d_to_seg).format(seg=mem_seg)
                 ]
-                self._write_instructions(instructions)
+
+            self._write_instructions(instructions)
 
 
     @staticmethod
@@ -155,6 +175,7 @@ class CodeWriter:
 
         return instruction
 
+
     @staticmethod
     def _generate_push_pop_snippets(segment, index):
         # move memory segment register to D
@@ -173,16 +194,16 @@ class CodeWriter:
             'M=D'
         ]
         # move from stack to a temporary memory register
-        stack_to_tmp_reg = [
+        stack_to_d = [
             '@SP',
             'M=M-1',
             'A=M',
-            'D=M',
-            '@R13',  # store value here temporarily
-            'M=D'
+            'D=M'
         ]
         # move from temporary memory register to memory segment register
-        tmp_reg_to_seg = [
+        d_to_seg = [
+            '@R13',  # store value here temporarily
+            'M=D',
             f'@{index}',
             'D=A',
             '@' + ('5' if segment == 'temp' else '{seg}'),
@@ -196,7 +217,7 @@ class CodeWriter:
             'M=D'
         ]
 
-        return seg_to_d, d_to_stack, stack_to_tmp_reg, tmp_reg_to_seg
+        return seg_to_d, d_to_stack, stack_to_d, d_to_seg
 
 
     def _write_instructions(self, instructions):
