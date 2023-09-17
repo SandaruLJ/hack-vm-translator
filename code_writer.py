@@ -65,7 +65,12 @@ class CodeWriter:
 
             # special case for static segment
             elif segment == 'static':
-                instructions = []
+                filename = ''.join(self.file.name.split('.')[0:-1])
+                instructions = [
+                    f'@{filename}.{index}',
+                    'D=M',
+                    '\n'.join(d_to_stack)
+                ]
 
             # special case for pointer segment
             elif segment == 'pointer':
@@ -90,7 +95,12 @@ class CodeWriter:
 
             # special case for static segment
             if segment == 'static':
-                instructions = []
+                filename = ''.join(self.file.name.split('.')[0:-1])
+                instructions = [
+                    '\n'.join(stack_to_d),
+                    f'@{filename}.{index}',
+                    'M=D'
+                ]
 
             # special case for pointer segment
             elif segment == 'pointer':
