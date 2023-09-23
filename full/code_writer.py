@@ -33,10 +33,6 @@ class CodeWriter:
         self.source = filename
 
 
-    def _write_comment(self, comment):
-        self.file.write(f'// {comment}\n')
-
-
     def write_arithmetic(self, command):
         """Write to the output file,
         the assembly code that implements the given arithmetic-logic command.
@@ -237,6 +233,10 @@ class CodeWriter:
         ]
 
         return seg_to_d, d_to_stack, stack_to_d, d_to_seg
+
+
+    def _write_comment(self, comment):
+        self.file.write(f'// {comment}\n')
 
 
     def _write_instructions(self, instructions):
