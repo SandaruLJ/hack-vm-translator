@@ -84,8 +84,16 @@ class Parser:
         # check for stack operation commands
         if self.current_command.startswith('push'):
             return C_PUSH
-        elif self.current_command.startswith('pop'):
+        if self.current_command.startswith('pop'):
             return C_POP
+
+        # check for branching commands
+        if self.current_command.startswith('label'):
+            return C_LABEL
+        if self.current_command.startswith('goto'):
+            return C_GOTO
+        if self.current_command.startswith('if-goto'):
+            return C_IF
 
 
     def arg1(self):
