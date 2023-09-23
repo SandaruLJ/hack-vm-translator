@@ -59,6 +59,8 @@ def translate(parser, writer):
             writer.write_arithmetic(parser.current_command)
         elif cmd_type == C_PUSH or cmd_type == C_POP:
             writer.write_push_pop(cmd_type, parser.arg1(), parser.arg2())
+        elif cmd_type == C_LABEL:
+            writer.write_label(parser.arg1())
 
 
 def parse_filename(file):

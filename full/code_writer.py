@@ -18,6 +18,7 @@ class CodeWriter:
         set_filename(str) -> None
         write_arithmetic(str) -> None
         write_push_pop(str, str, int) -> None
+        write_label(str) -> None
     """
 
     def __init__(self, filename):
@@ -123,6 +124,11 @@ class CodeWriter:
                 ]
 
             self._write_instructions(instructions)
+
+
+    def write_label(self, label):
+        instructions = [f'({label})']
+        self._write_instructions(instructions)
 
 
     @staticmethod
