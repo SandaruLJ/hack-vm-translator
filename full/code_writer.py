@@ -15,6 +15,7 @@ class CodeWriter:
         file: file object of the output file
 
     Methods:
+        set_filename(str) -> None
         write_arithmetic(str) -> None
         write_push_pop(str, str, int) -> None
     """
@@ -22,6 +23,14 @@ class CodeWriter:
     def __init__(self, filename):
         self.file = open(filename, 'w')
         self.unique_num = 0  # for making each symbolic label globally unique
+        self.source = ''
+
+
+    def set_filename(self, filename):
+        """Inform that the translation of a new VM file has started.
+        Set the name of the current source file being translated.
+        """
+        self.source = filename
 
 
     def _write_comment(self, comment):
