@@ -129,12 +129,18 @@ class CodeWriter:
 
 
     def write_label(self, label):
+        """Write to the output file,
+        the assembly code that implements the label command.
+        """
         self._write_comment(f'label {label}')
         instructions = [f'({label})']
         self._write_instructions(instructions)
 
 
     def write_goto(self, label):
+        """Write to the output file,
+        the assembly code that implements the unconditional goto command.
+        """
         self._write_comment(f'goto {label}')
         instructions = [
             f'@{label}',
@@ -144,6 +150,9 @@ class CodeWriter:
 
 
     def write_if(self, label):
+        """Write to the output file,
+        the assembly code that implements the conditional goto command.
+        """
         self._write_comment(f'if-goto {label}')
         instructions = [
             '@SP',
