@@ -19,6 +19,8 @@ class CodeWriter:
         write_arithmetic(str) -> None
         write_push_pop(str, str, int) -> None
         write_label(str) -> None
+        write_goto(str) -> None
+        write_if(str) -> None
     """
 
     def __init__(self, filename):
@@ -127,7 +129,29 @@ class CodeWriter:
 
 
     def write_label(self, label):
+        self._write_comment(f'label {label}')
         instructions = [f'({label})']
+        self._write_instructions(instructions)
+
+
+    def write_goto(self, label):
+        self._write_comment(f'goto {label}')
+        instructions = [
+            f'@{label}',
+            '0;JMP',
+        ]
+        self._write_instructions(instructions)
+
+
+    def write_if(self, label):
+        self._write_comment(f'if-goto {label}')
+        instructions = [
+            '@SP',
+            'AM=M-1',
+            'D=M',
+            f'@{label}',
+            'D;JNE'
+        ]
         self._write_instructions(instructions)
 
 
