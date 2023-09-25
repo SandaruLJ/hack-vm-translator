@@ -45,26 +45,39 @@ def main():
         # create parser instance for each source file
         parser = Parser(source_file)
 
-        translate(parser, writer)
+        translate(filename, parser, writer)
 
     # close target file
     writer.close()
 
 
-def translate(parser, writer):
+def translate(source, parser, writer):
+    writer.set_filename(source)
+    
     while parser.advance():
         cmd_type = parser.command_type()
 
+        # arithmetic and logical commands
         if cmd_type == C_ARITHMETIC:
             writer.write_arithmetic(parser.current_command)
+        
+        # memory access commands
         elif cmd_type == C_PUSH or cmd_type == C_POP:
             writer.write_push_pop(cmd_type, parser.arg1(), parser.arg2())
+        
+        # branching commands
         elif cmd_type == C_LABEL:
             writer.write_label(parser.arg1())
         elif cmd_type == C_GOTO:
             writer.write_goto(parser.arg1())
         elif cmd_type == C_IF:
             writer.write_if(parser.arg1())
+
+        # function commands
+        elif cmd_type == C_FUNCTION:
+            writer.write_function(parser.arg1(), parser.arg2())
+        elif cmd_type == C_RETURN:
+            writer.write_return()
 
 
 def parse_filename(file):

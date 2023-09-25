@@ -21,6 +21,8 @@ class CodeWriter:
         write_label(str) -> None
         write_goto(str) -> None
         write_if(str) -> None
+        write_function(str, int) -> None
+        write_return() -> None
     """
 
     def __init__(self, filename):
@@ -161,6 +163,89 @@ class CodeWriter:
             f'@{label}',
             'D;JNE'
         ]
+        self._write_instructions(instructions)
+
+
+    def write_function(self, function, local_variables):
+        """Write to the output file,
+        the assembly code that implements the function command.
+        """
+        self._write_comment(f'function {function} {local_variables}')
+
+        # create function entry label
+        instructions = [f'({function})']
+
+        # assign local memory segment
+        instructions += [
+            '@SP',
+            'D=M',
+            '@LCL',
+            'M=D'
+        ]
+
+        # initialize local variables
+        for _ in range(local_variables):
+            instructions += [
+                '@0',
+                'D=A',
+                '@SP',
+                'M=M+1',
+                'A=M-1',
+                'M=D'
+            ]
+
+        self._write_instructions(instructions)
+
+
+    def write_return(self):
+        """Write to the output file,
+        the assembly code that implements the return command.
+        """
+        self._write_comment('return')
+
+        instructions = [
+            '@LCL',
+            'D=M',
+            '@R13',
+            'M=D',      # save LCL (end of frame) in temporary variable
+            '@5',
+            'D=D-A',
+            '@R14',
+            'M=D',      # save return address in temporary variable
+            '@SP',
+            'A=M-1',
+            'D=M',
+            '@ARG',
+            'A=M',
+            'M=D',      # reposition return value for the caller
+            'D=A+1',
+            '@SP',
+            'M=D',      # reposition stack pointer for the caller
+            '@R13',
+            'AM=M-1',
+            'D=M',
+            '@THAT',
+            'M=D',      # restore THAT (that segment) for the caller
+            '@R13',
+            'AM=M-1',
+            'D=M',
+            '@THIS',
+            'M=D',      # restore THIS (this segment) for the caller
+            '@R13',
+            'AM=M-1',
+            'D=M',
+            '@ARG',
+            'M=D',      # restore ARG (argument segment) for the caller
+            '@R13',
+            'AM=M-1',
+            'D=M',
+            '@LCL',
+            'M=D',      # restore LCL (local segment) for the caller
+            '@R14',
+            'A=M',
+            '0;JMP'     # go to the return address
+        ]
+
         self._write_instructions(instructions)
 
 
