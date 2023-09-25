@@ -95,6 +95,14 @@ class Parser:
         if self.current_command.startswith('if-goto'):
             return C_IF
 
+        # check for function commands
+        if self.current_command.startswith('function'):
+            return C_FUNCTION
+        if self.current_command.startswith('call'):
+            return C_CALL
+        if self.current_command.startswith('return'):
+            return C_RETURN
+
 
     def arg1(self):
         """Return the first argument of the current command.
