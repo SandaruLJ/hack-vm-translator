@@ -30,6 +30,20 @@ class CodeWriter:
         self.unique_num = 0  # for making each symbolic label globally unique
         self.source = ''
 
+        self._write_bootstrap_code()
+
+
+    def _write_bootstrap_code(self):
+        instructions = [
+            "@256",
+            "D=A",
+            "@SP",
+            "M=D",          # set stack pointer to 256
+            "@Sys.init",
+            "0;JMP"         # call Sys.init
+        ]
+        self._write_instructions(instructions)
+
 
     def set_filename(self, filename):
         """Inform that the translation of a new VM file has started.
