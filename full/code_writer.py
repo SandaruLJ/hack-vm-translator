@@ -223,7 +223,8 @@ class CodeWriter:
             '@R13',
             'M=D',      # save LCL (end of frame) in temporary variable
             '@5',
-            'D=D-A',
+            'A=D-A',
+            'D=M',
             '@R14',
             'M=D',      # save return address in temporary variable
             '@SP',
