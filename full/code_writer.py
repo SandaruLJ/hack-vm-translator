@@ -23,12 +23,14 @@ class CodeWriter:
         write_if(str) -> None
         write_function(str, int) -> None
         write_return() -> None
+        write_call() -> None
     """
 
     def __init__(self, filename):
         self.file = open(filename, 'w')
         self.unique_num = 0  # for making each symbolic label globally unique
         self.source = ''
+        self.function_calls = {}  # ex: {"function_name": num_calls}
 
         self._write_bootstrap_code()
 
@@ -38,18 +40,19 @@ class CodeWriter:
             "@256",
             "D=A",
             "@SP",
-            "M=D",          # set stack pointer to 256
-            "@Sys.init",
-            "0;JMP"         # call Sys.init
+            "M=D",
         ]
+        # set stack pointer to 256
         self._write_instructions(instructions)
+        # call Sys.init
+        self.write_call('Sys.init', 0)
 
 
     def set_filename(self, filename):
         """Inform that the translation of a new VM file has started.
         Set the name of the current source file being translated.
         """
-        self.source = filename
+        self.source = filename.split('/')[-1]
 
 
     def write_arithmetic(self, command):
@@ -89,9 +92,8 @@ class CodeWriter:
 
             # special case for static segment
             elif segment == 'static':
-                filename = ''.join(self.file.name.split('.')[0:-1])
                 instructions = [
-                    f'@{filename}.{index}',
+                    f'@{self.source}.{index}',
                     'D=M',
                     '\n'.join(d_to_stack)
                 ]
@@ -119,10 +121,9 @@ class CodeWriter:
 
             # special case for static segment
             if segment == 'static':
-                filename = ''.join(self.file.name.split('.')[0:-1])
                 instructions = [
                     '\n'.join(stack_to_d),
-                    f'@{filename}.{index}',
+                    f'@{self.source}.{index}',
                     'M=D'
                 ]
 
@@ -209,6 +210,61 @@ class CodeWriter:
             ]
 
         self._write_instructions(instructions)
+
+
+    def write_call(self, function, num_arguments):
+        """Write assembly code that effects the call command."""
+        self._write_comment(f'call {function} {num_arguments}')
+
+        try:
+            self.function_calls[function] += 1
+            call_num = self.function_calls[function]
+        except (KeyError):
+            self.function_calls[function] = 0
+            call_num = 0
+
+        return_address = f'{function}$ret.{call_num}'
+
+        instructions = [
+            f'@{return_address}',
+            'D=A',
+            '@SP',
+            'M=M+1',
+            'A=M-1',
+            'M=D',                      # push return address label to stack
+            self._push_segment('LCL'),
+            self._push_segment('ARG'),
+            self._push_segment('THIS'),
+            self._push_segment('THAT'),
+            f'@{5 + num_arguments}',    # number to subtract from SP to get to ARG
+            'D=A',
+            '@SP',
+            'D=M-D',
+            '@ARG',
+            'M=D',                      # reposition ARG
+            '@SP',
+            'D=M',
+            '@LCL',
+            'M=D',                      # reposition LCL
+            f'@{function}',
+            '0;JMP',                    # call function (transfer control to callee)
+            f'({return_address})'       # inject return address label into the code
+        ]
+
+        self._write_instructions(instructions)
+
+
+    @staticmethod
+    def _push_segment(segment):
+        instructions = [
+            f'@{segment}',
+            'D=M',
+            '@SP',
+            'M=M+1',
+            'A=M-1',
+            'M=D'
+        ]
+        return '\n'.join(instructions)
 
 
     def write_return(self):

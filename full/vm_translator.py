@@ -76,6 +76,8 @@ def translate(source, parser, writer):
         # function commands
         elif cmd_type == C_FUNCTION:
             writer.write_function(parser.arg1(), parser.arg2())
+        elif cmd_type == C_CALL:
+            writer.write_call(parser.arg1(), parser.arg2())
         elif cmd_type == C_RETURN:
             writer.write_return()
 
